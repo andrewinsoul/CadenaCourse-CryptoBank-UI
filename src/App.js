@@ -68,8 +68,6 @@ const App = () => {
         "An error occured";
       const errorHeader = "Transaction Error";
       return { errorBody, errorHeader, success: false };
-      displayError("Transaction Error", errorBody);
-      console.log("check if wallet is connected error >>>>>>>>>>>>> ", error);
     }
   };
 
@@ -84,21 +82,16 @@ const App = () => {
           signer
         );
         return bankContract.bankName();
-        let bankName = await bankContract.bankName();
-        bankName = utils.parseBytes32String(bankName);
-        setCurrentBankName(bankName.toString());
       } else {
         const errorBody = "Install Metamask to use our crypto bank...";
         displayError("Metamask not installed", errorBody);
       }
     } catch (error) {
-      console.log("witch >>>>>>>>>>>>>>>>>> ", error);
       const errorBody =
         (error.error && formatContractError(error.error.message)) ||
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
-      console.log("get bank name error >>>>>>>>>>>>> ", error);
     }
   };
 
@@ -152,16 +145,6 @@ const App = () => {
           signer
         );
         return bankContract.bankOwner();
-        let owner = await bankContract.bankOwner();
-        setBankOwnerAddress(owner);
-
-        const [account] = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-
-        if (owner.toLowerCase() === account.toLowerCase()) {
-          setIsBankerOwner(true);
-        }
       } else {
         const errorBody = "Install Metamask to use our crypto bank...";
         displayError("Metamask not installed", errorBody);
@@ -172,7 +155,6 @@ const App = () => {
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
-      console.log("get bank owner handler error >>>>>>>>>>>>> ", error);
     }
   };
 
@@ -187,9 +169,6 @@ const App = () => {
           signer
         );
         return bankContract.getCustomerBalance();
-        let balance = await bankContract.getCustomerBalance();
-        setCustomerTotalBalance(utils.formatEther(balance));
-        console.log("Retrieved balance...", balance);
       } else {
         const errorBody = "Install Metamask to use our crypto bank...";
         displayError("Metamask not installed", errorBody);
@@ -200,7 +179,6 @@ const App = () => {
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
-      console.log("customer balance handler error >>>>>>>>>>>>> ", error);
     }
   };
 
@@ -317,7 +295,7 @@ const App = () => {
           displayError(errorHeader, errorBody);
         }
       } catch (err) {
-        console.log("err >>>>>>>> ", err);
+        console.log("err on startup >>>>>>>> ", err);
         displayError("Error", "An error occured while loading the app");
       }
     };
