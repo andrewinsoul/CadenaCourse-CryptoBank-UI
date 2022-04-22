@@ -55,15 +55,19 @@ const App = () => {
         setIsWalletConnected(true);
         setCustomerAddress(account);
         console.log("Account Connected: ", account);
+        return { success: true };
       } else {
         const errorBody = "Install Metamask to use our crypto bank...";
-        displayError("Metamask not installed", errorBody);
+        const errorHeader = "Metamask not installed";
+        return { errorBody, errorHeader, success: false };
       }
     } catch (error) {
       const errorBody =
         (error.error && formatContractError(error.error.message)) ||
         error.message ||
         "An error occured";
+      const errorHeader = "Transaction Error";
+      return { errorBody, errorHeader, success: false };
       displayError("Transaction Error", errorBody);
       console.log("check if wallet is connected error >>>>>>>>>>>>> ", error);
     }
@@ -79,7 +83,7 @@ const App = () => {
           contractABI,
           signer
         );
-
+        return bankContract.bankName();
         let bankName = await bankContract.bankName();
         bankName = utils.parseBytes32String(bankName);
         setCurrentBankName(bankName.toString());
@@ -88,6 +92,7 @@ const App = () => {
         displayError("Metamask not installed", errorBody);
       }
     } catch (error) {
+      console.log("witch >>>>>>>>>>>>>>>>>> ", error);
       const errorBody =
         (error.error && formatContractError(error.error.message)) ||
         error.message ||
@@ -146,7 +151,7 @@ const App = () => {
           contractABI,
           signer
         );
-
+        return bankContract.bankOwner();
         let owner = await bankContract.bankOwner();
         setBankOwnerAddress(owner);
 
@@ -181,7 +186,7 @@ const App = () => {
           contractABI,
           signer
         );
-
+        return bankContract.getCustomerBalance();
         let balance = await bankContract.getCustomerBalance();
         setCustomerTotalBalance(utils.formatEther(balance));
         console.log("Retrieved balance...", balance);
@@ -202,7 +207,6 @@ const App = () => {
   const deposityMoneyHandler = async (event) => {
     setDepositing(true);
     try {
-      event.preventDefault();
       if (window.ethereum) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
@@ -239,7 +243,6 @@ const App = () => {
   const withDrawMoneyHandler = async (event) => {
     setWithdrawing(true);
     try {
-      event.preventDefault();
       if (window.ethereum) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
@@ -285,10 +288,40 @@ const App = () => {
   };
 
   useEffect(() => {
-    checkIfWalletIsConnected();
-    getBankName();
-    getbankOwnerHandler();
-    customerBalanceHandler();
+    const fetch = async () => {
+      try {
+        const isWalletConnectedRes = await checkIfWalletIsConnected();
+        const { success, errorBody, errorHeader } = isWalletConnectedRes;
+        console.log(success, errorBody, errorHeader);
+        if (success) {
+          const res = await Promise.all([
+            getBankName(),
+            getbankOwnerHandler(),
+            customerBalanceHandler(),
+          ]);
+          let [bankName, owner, balance] = res;
+          bankName = utils.parseBytes32String(bankName);
+          setCurrentBankName(bankName.toString());
+          setBankOwnerAddress(owner);
+
+          const [account] = await window.ethereum.request({
+            method: "eth_requestAccounts",
+          });
+
+          if (owner.toLowerCase() === account.toLowerCase()) {
+            setIsBankerOwner(true);
+          }
+          setCustomerTotalBalance(utils.formatEther(balance));
+          console.log("Retrieved balance...", balance);
+        } else {
+          displayError(errorHeader, errorBody);
+        }
+      } catch (err) {
+        console.log("err >>>>>>>> ", err);
+        displayError("Error", "An error occured while loading the app");
+      }
+    };
+    fetch();
   }, [isWalletConnected]);
 
   return (
